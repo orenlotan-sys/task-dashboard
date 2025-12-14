@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול משימות - מחלקת הליכתיות ורכיבה</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--gray-600);
+            font-size: 1rem;
+        }
+
+        .sync-setup {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+        }
+
+        .sync-setup.hidden {
+            display: none;
+        }
+
+        .sync-setup input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.5rem;
+            font-family: 'Heebo', sans-serif;
+            margin-bottom: 0.5rem;
+        }
+
+        .sync-setup button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-family: 'Heebo', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .sync-setup button:hover {
+            background: #1d4ed8;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .sync-status.synced {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .sync-status.syncing {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .sync-status.error {
+            background: #fee;
+            color: #c00;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--gray-700);
+            font-size: 0.875rem;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.5rem;
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .task-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-right: 4px solid var(--gray-300);
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .task-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .task-card.priority-P { border-right-color: var(--danger); }
+        .task-card.priority-X { border-right-color: var(--primary); }
+        .task-card.priority-O { border-right-color: var(--success); }
+        .task-card.priority-V { border-right-color: var(--gray-400); }
+        .task-card.priority-H { border-right-color: var(--warning); }
+        .task-card.priority-D { border-right-color: var(--gray-500); }
+
+        .task-header {
+            margin-bottom: 1rem;
+        }
+
+        .task-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .task-owner {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+        .owner-badge {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .status-change-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+        }
+
+        .status-change-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .status-select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.375rem;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.875rem;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .task-updates {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .update-item {
+            padding: 0.5rem 0.5rem 0.5rem 2rem;
+            background: var(--gray-50);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .update-item.custom-update {
+            background: #e0f2fe;
+            border-right: 3px solid var(--primary);
+        }
+
+        .update-timestamp {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            margin-top: 0.25rem;
+            display: block;
+        }
+
+        .delete-update-btn {
+            position: absolute;
+            left: 0.5rem;
+            top: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .update-item:hover .delete-update-btn {
+            opacity: 1;
+        }
+
+        .add-update-section {
+            margin-top: 1rem;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .add-update-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .add-update-input,
+        .add-todo-input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.375rem;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+
+        .add-update-input:focus,
+        .add-todo-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .add-update-btn,
+        .add-todo-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-family: 'Heebo', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .add-update-btn:hover,
+        .add-todo-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .todo-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .todo-list {
+            margin-bottom: 0.5rem;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--gray-50);
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .todo-item.completed {
+            opacity: 0.6;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+        }
+
+        .todo-checkbox {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            line-height: 1.5;
+        }
+
+        .todo-delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .todo-item:hover .todo-delete-btn {
+            opacity: 1;
+        }
+
+        .toggle-updates {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.5rem 0;
+            margin-top: 0.5rem;
+            font-family: 'Heebo', sans-serif;
+        }
+
+        .toggle-updates:hover {
+            text-decoration: underline;
+        }
+
+        .updates-collapsed {
+            display: none;
+        }
+
+        .action-buttons {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            z-index: 1000;
+        }
+
+        .action-btn {
+            padding: 1rem 1.5rem;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-family: 'Heebo', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sync-btn {
+            background: #4285f4;
+        }
+
+        .export-btn {
+            background: var(--success);
+        }
+
+        .no-tasks {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            grid-column: 1/-1;
+        }
+
+        .no-tasks-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .no-tasks h3 {
+            font-size: 1.5rem;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .no-tasks p {
+            color: var(--gray-600);
+        }
+
+        .setup-instructions {
+            background: #fef3c7;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .setup-instructions strong {
+            color: var(--gray-900);
+        }
+
+        .setup-instructions a {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 ניהול משימות - מחלקת הליכתיות ורכיבה</h1>
+            <p>מערכת ניהול משימות אינטראקטיבית עם סנכרון אוטומטי</p>
+            
+            <div class="sync-setup" id="syncSetup">
+                <div class="setup-instructions">
+                    <strong>🔧 הגדרת סנכרון בפעם הראשונה:</strong><br>
+                    1. היכנס ל-<a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Personal Access Tokens</a><br>
+                    2. לחץ "Generate new token (classic)"<br>
+                    3. תן שם לטוקן (למשל: "Task Dashboard")<br>
+                    4. בחר הרשאה: <strong>gist</strong> (Create gists)<br>
+                    5. לחץ "Generate token" והעתק את הטוקן<br>
+                    6. הדבק את הטוקן למטה ולחץ "שמור"
+                </div>
+                <input type="text" id="tokenInput" placeholder="הדבק את ה-GitHub token כאן...">
+                <button onclick="saveToken()">שמור הגדרות</button>
+            </div>
+
+            <div class="sync-status" id="syncStatus" style="display: none;">
+                <span id="syncText">⏳ טוען...</span>
+            </div>
+        </div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="filters">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>🔍 חיפוש</label>
+                    <input type="text" id="searchInput" placeholder="חפש משימות...">
+                </div>
+                <div class="filter-group">
+                    <label>📂 סוג משימה</label>
+                    <select id="typeFilter">
+                        <option value="">הכל</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>👤 אחראי</label>
+                    <select id="ownerFilter">
+                        <option value="">הכל</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>⚡ סטטוס</label>
+                    <select id="statusFilter">
+                        <option value="">הכל</option>
+                        <option value="P">P - קדימות גבוהה</option>
+                        <option value="X">X - בעבודה</option>
+                        <option value="O">O - מתמשך</option>
+                        <option value="V">V - הושלם</option>
+                        <option value="H">H - בהמתנה</option>
+                        <option value="D">D - בוטל</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="tasks-grid" id="tasksGrid"></div>
+
+        <div class="action-buttons">
+            <button class="action-btn sync-btn" id="syncBtn" onclick="manualSync()" disabled>
+                ☁️ סנכרן עכשיו
+            </button>
+            <button class="action-btn export-btn" onclick="exportToJSON()">
+                💾 ייצא נתונים
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'tasksDashboardData';
+        const TOKEN_KEY = 'githubToken';
+        const GIST_ID_KEY = 'gistId';
+        
+        const defaultTasks = [{"type":"חניונים, חניות, מסילות","project":"הקמת צוות תכנון חניון נבון","owner":"אורן","status":"P","updates":["הוסכם להעביר לעדן","הוחלט להשאיר בצתא\"ל","מחכה לאישור תקציב מת\"ח","מאיר מתקדם, מחכים לאישור חוזה","מתקנים נבדקו"]},{"type":"עידוד רכיבה והליכה","project":"בית ספר רוכב","owner":"","status":"P","updates":["חוזה נשלח למיטל אלאקלעי","יש הולד על הועדת מכרזים","חוזה תקוע","נורית הסכימה, חוזה תקוע בהתקשרויות"]},{"type":"ניהול כללי","project":"לייצר מצגת לישי טלאור","owner":"","status":"P","updates":["מצגת ראשונית מוכנה"]},{"type":"ניהול כללי","project":"יצירת הצגה לסטיב על סטטוס בדיקות היתכנות","owner":"","status":"P","updates":["אקסל קיים"]},{"type":"חניונים, חניות, מסילות","project":"סטנדרט חניונים עירוני","owner":"אורן","status":"X","updates":["פגישה ראשונה בוצעה","קיבלנו את המצגות","ביקשתי משירן לקבוע פגישה","פגישה בשני הקרוב","בוצעה הפגישה","תואמה פגישה על בייט"]},{"type":"ניהול כללי","project":"להבין מה הסטטוס של השביל בדוד המלך","owner":"","status":"X","updates":["התקבל"]},{"type":"ניהול מידע","project":"מפת אופניים","owner":"אורן","status":"X","updates":["ממתין לדניאל באייב","הוסכם עם דניאל לייצר מפת על","נוצרה מפה ראשונית","התקבלו סרטונים מאביב"]},{"type":"קבוצות רכישה וסבסוד","project":"קבוצת רכישה ארצית","owner":"","status":"X","updates":["שיחה עם איתן עטיה","שיחה בוצעה עם מאיה קרבטרי","גיוס מתקדם של עיריות","קול קורא יצא, אוספים משתתפים"]},{"type":"תכנון אסטרטגי","project":"הר חומה","owner":"אורן","status":"X","updates":["קידום תוכנית אב","הותנעה עבודה ראשונית","ממתין עד לסיום בוסתנאי ושמעוני"]},{"type":"תכנון אסטרטגי","project":"תוכנית אב אסטרטגית","owner":"אורן","status":"X","updates":["ליווי","ליווי מתמיד"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"הרצל","owner":"אורן","status":"X","updates":["קידום לתכנון מוקדם","אושר במאיץ","מחכה לתקצוב לתכנון"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"צבי יהודה","owner":"אורן","status":"X","updates":["קידום לתכנון מוקדם, נקבעה פגישה במאיץ","אושר במאיץ","מחכה לתקצוב לתכנון"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"קינג ג'ורג'","owner":"אורן","status":"X","updates":["קידום לתכנון מוקדם","נעצר"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"ז'בוטינסקי","owner":"אורן","status":"X","updates":["סיום בדיקת היתכנות","להביא אישור לעירייה","לא תועדף"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"גילה טקטי","owner":"אורן","status":"X","updates":["השלמת מעגלי תנועה בגילה","בעבודה אצל רולי"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"בוסתנאי","owner":"אורן","status":"X","updates":["בבדיקת היתכנות אצל אליה בן שבת","הוצג לצבי וג'וש ולתמי וראובן"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"שמעוני","owner":"אורן","status":"X","updates":["בבדיקת היתכנות אצל אליה בן שבת","הוצג לצבי וג'וש ולתמי וראובן"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"האר\"י","owner":"אורן","status":"X","updates":["יצירת תכנון חלופי","מחכה לרולי"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"שביל יפו","owner":"אורן","status":"X","updates":["לייצר בדיקת היתכנות עבור שביל יפו","אי אפשר לעשות חוזה","הועבר חומר לדני"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"רבקה","owner":"אורן","status":"X","updates":["בדיקת היתכנות"]},{"type":"עידוד רכיבה והליכה","project":"ספריית אופניים","owner":"","status":"X","updates":["מצגת בעבודה","מצגת הסתיימה, נקבעה פגישה עם ענר","נעשתה פגישה עם ענר","בוצע סיור בספרייה","אושר בהרל\"י"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"בית החייל","owner":"אורן","status":"X","updates":["ממתין לתקצוב","ממתין לבדיקת היתכנות של שמואל","פגישה נדחתה","ממתין לתכנון משמואל"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"חיבור פסג\"ז","owner":"אורן","status":"X","updates":["סיום בדיקת היתכנות"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"נוף ציון","owner":"אורן","status":"X","updates":["סיום בדיקת היתכנות","מת\"ח לא אישר"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"בית צפאפא","owner":"אורן","status":"X","updates":["לא החל"]},{"type":"עידוד רכיבה והליכה","project":"לימודי רכיבה למבוגרים","owner":"","status":"X","updates":["אופניים הועמדו","נגמרו כל החוזים הקיימים","נשלח","עבר את איילה"]},{"type":"רגולציה","project":"קידום רגולציה לטובת אופניים היברידיים","owner":"","status":"X","updates":["מחכה לישיבה במת\"ח","אין ישיבה עם אליהו","דובר עם אייל","הועבר לאייל"]},{"type":"תכנון אסטרטגי","project":"מזרח העיר","owner":"אורן","status":"X","updates":["התנעת תוכנית אב"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"קפלן","owner":"אורן","status":"X","updates":["לקדם לביצוע","ממתין להחלטה בנוגע לתקצוב","ממתין לישיבה עם רועי"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"שמואל ברוך","owner":"אורן","status":"O","updates":["מתקדם","נעשה סיור שטח","בעבודה אצל רולי"]},{"type":"חניונים, חניות, מסילות","project":"מסילות - בית הכרם","owner":"אורן","status":"O","updates":["אישור מסילות לפרוייקט בית הכרם","ממתינים לתשובה מברק כראדי"]},{"type":"חניונים, חניות, מסילות","project":"הרחבה לתחנה מרכזית","owner":"אורן","status":"O","updates":["לא התחיל"]},{"type":"חניונים, חניות, מסילות","project":"חניון אופניים רכבת מרכז","owner":"אורן","status":"O","updates":["בתכנון","ממתין לדנה בורשטיין שתחזיר תשובות"]},{"type":"חניונים, חניות, מסילות","project":"חניון אופניים חאן","owner":"אורן","status":"O","updates":["בתכנון"]},{"type":"חניונים, חניות, מסילות","project":"מסילות - מנהפים קטנים","owner":"אורן","status":"O","updates":["ממתין לחוזה מנה\"פים קטנים","מחכה לסיוע מצבי"]},{"type":"חניונים, חניות, מסילות","project":"מסילות - רשימת ביצוע","owner":"אורן","status":"O","updates":["יצירת רשימת מסילות לביצוע","ממתין להלבנה4"]},{"type":"תכנון אסטרטגי","project":"פרוייקטור בית הכרם","owner":"אורן","status":"O","updates":["מתקדם"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"דרך חברון","owner":"אורן","status":"O","updates":["ללוות ישיבות אצל צבי"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"ציר ירוק","owner":"אורן","status":"O","updates":["ליווי"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"רחביה ב - הצגה","owner":"אורן","status":"O","updates":["ליווי, הצגה למינהל"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"רחביה ב - ליווי","owner":"אורן","status":"O","updates":["ליווי"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"הנשיא השישי","owner":"אורן","status":"O","updates":["ליווי"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"הר חומה - זרח ורהפטיג","owner":"אורן","status":"O","updates":["לקדם את זרח ורהפטיג","בעבודה","חזר להתקדם"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"אהרונוב","owner":"אורן","status":"O","updates":["התנעת בדיקת היתכנות","הועבר לדני","התחילה בדיקת היתכנות","חזר לעבודה, מתקדם"]},{"type":"קבוצות רכישה וסבסוד","project":"ליסינג אופניים היברידיים","owner":"","status":"H","updates":["לא החל","אבי עידכן שהוא לא יטפל","אבי יעדכן בתחילת דצמבר","בהמתנה"]},{"type":"חניונים, חניות, מסילות","project":"חניות רחוביות מוגנות - התנעה","owner":"אורן","status":"H","updates":["לא החל","מחכה לתקצוב ממת\"ח","עבר להולד"]},{"type":"חניונים, חניות, מסילות","project":"חניות רחוביות מוגנות - איפיון","owner":"אורן","status":"H","updates":["לא החל","ממתין להחלטה בנוגע לתקצוב"]},{"type":"חניונים, חניות, מסילות","project":"חניות אופניים רחוביות - פריסה","owner":"אורן","status":"H","updates":["ממתין לתקצוב"]},{"type":"חניונים, חניות, מסילות","project":"חניות אופניים רגילות - איפיון","owner":"אורן","status":"H","updates":["קיים שאלון מוכן להפצה"]},{"type":"כנסי אופניים","project":"כנס אופניים עירוני","owner":"","status":"H","updates":["לא החל","יש שיח ראשוני עם לבנדיגר"]},{"type":"עידוד רכיבה והליכה","project":"יצירת סרטון תדמית","owner":"","status":"H","updates":["מחכה לסרטונים מאביב נחשון","התקבלו סרטונים מאביב"]},{"type":"תכנון אסטרטגי","project":"יצירת תוכנית נגד גניבות","owner":"","status":"H","updates":["קיימת טיוטא ראשונה","ימתין לתחילת התפקיד"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"עוקף מנהרה","owner":"אורן","status":"H","updates":["לא החל"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"כובשי קטמון","owner":"אורן","status":"H","updates":["ליווי","כרגע מקדמים את בוסתנאי במקום"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"אגרון - רמבן","owner":"אורן","status":"H","updates":["בדיקת היתכנות","בהולד עד סיום בית החייל"]},{"type":"עידוד רכיבה והליכה","project":"פגישה עם מאיץ","owner":"","status":"V","updates":["ממתין לפגישה","נשלח לאנה מסמך הסבר לחשבות"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"נתיבי מטר","owner":"אורן","status":"V","updates":["קידום תכנון לתל חי-בוסטנאי","אושר להביא נתיבים ניסיוניים","נקבע סיור שטח"]},{"type":"כנסי אופניים","project":"הרצאה בולוסיטי","owner":"","status":"V","updates":["הוגש אבסטרקט ראשוני"]},{"type":"אופניים שיתופיים","project":"קישור ירופאן לתחבצ","owner":"אורן","status":"V","updates":["איפיון אצל רוברט אסחק","איפיון הסתיים, הועבר לנועה"]},{"type":"אופניים שיתופיים","project":"קורקינטים","owner":"אורן","status":"V","updates":["נעשה סיור וטיוב של מקומות לפוליגונים"]},{"type":"הסברה, שיתופי ציבור","project":"מפת אופניים - גוגל","owner":"אורן","status":"V","updates":["גוגל מפות"]},{"type":"הסברה, שיתופי ציבור","project":"שיתוף ציבור גילה","owner":"אורן","status":"V","updates":["נקבע תאריך","הסתיים בהצלחה"]},{"type":"ניהול כללי","project":"סיור עבור תמיר","owner":"","status":"V","updates":["ירופאן יודעו","יש כלים"]},{"type":"ניהול כללי","project":"לגשת למכרז","owner":"","status":"V","updates":["לגשת למכרז מנהל מחלקה","מכרז הוגש"]},{"type":"ניהול כללי","project":"הכנת מצגת לראש העיר","owner":"","status":"V","updates":[]},{"type":"קבוצות רכישה וסבסוד","project":"חוזה קמפיינר","owner":"","status":"V","updates":["לא התחיל","נבחרה מירב דדש","חוזה תקוע בהתקשרויות","סבב חתימות הסתיים"]},{"type":"תכנון אסטרטגי","project":"הצגת תיעדוף למאיץ","owner":"אורן","status":"V","updates":["מחכה לישיבה","הוצג תיעדוף"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"אביזוהר","owner":"אורן","status":"V","updates":["מקודם","בעבודה"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"לורך","owner":"אורן","status":"V","updates":["התקבלו תוכניות מצב סופי","מה שקיים, קיים"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"בר לב","owner":"אורן","status":"V","updates":["ליווי","עלה לועדת היגוי"]},{"type":"תכנון שבילים ובדיקות היתכנות","project":"דוסטרובסקי","owner":"אורן","status":"D","updates":["לבטל ימינה חופשי"]}];
+
+        let tasks = [];
+        let filteredTasks = [];
+        let githubToken = null;
+        let gistId = null;
+
+        function init() {
+            // Load token and gist ID
+            githubToken = localStorage.getItem(TOKEN_KEY);
+            gistId = localStorage.getItem(GIST_ID_KEY);
+
+            if (githubToken) {
+                document.getElementById('syncSetup').classList.add('hidden');
+                document.getElementById('syncStatus').style.display = 'flex';
+                document.getElementById('syncBtn').disabled = false;
+                loadTasks();
+            } else {
+                // No token, use local storage
+                loadTasksFromLocal();
+            }
+        }
+
+        function saveToken() {
+            const token = document.getElementById('tokenInput').value.trim();
+            if (!token) {
+                alert('נא להזין GitHub token');
+                return;
+            }
+            
+            localStorage.setItem(TOKEN_KEY, token);
+            githubToken = token;
+            
+            document.getElementById('syncSetup').classList.add('hidden');
+            document.getElementById('syncStatus').style.display = 'flex';
+            document.getElementById('syncBtn').disabled = false;
+            
+            // Load tasks from local storage first, then sync
+            loadTasksFromLocal();
+            syncToGist();
+        }
+
+        function loadTasksFromLocal() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    tasks = JSON.parse(stored).map(task => ({
+                        ...task,
+                        customUpdates: task.customUpdates || [],
+                        todos: task.todos || [],
+                        updates: task.updates || []
+                    }));
+                } catch (e) {
+                    tasks = defaultTasks;
+                }
+            } else {
+                tasks = defaultTasks;
+            }
+            
+            filteredTasks = [...tasks];
+            renderStats();
+            populateFilters();
+            renderTasks();
+            updateSyncStatus('synced', 'נטען מאחסון מקומי');
+        }
+
+        function loadTasks() {
+            if (!githubToken) {
+                loadTasksFromLocal();
+                return;
+            }
+
+            updateSyncStatus('syncing', 'טוען מ-GitHub...');
+            
+            if (gistId) {
+                // Load from existing gist
+                fetch(`https://api.github.com/gists/${gistId}`, {
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.files && data.files['tasks.json']) {
+                        const content = data.files['tasks.json'].content;
+                        tasks = JSON.parse(content).map(task => ({
+                            ...task,
+                            customUpdates: task.customUpdates || [],
+                            todos: task.todos || [],
+                            updates: task.updates || []
+                        }));
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+                        filteredTasks = [...tasks];
+                        renderStats();
+                        populateFilters();
+                        renderTasks();
+                        updateSyncStatus('synced', `סונכרן מ-GitHub (${new Date().toLocaleString('he-IL')})`);
+                    } else {
+                        loadTasksFromLocal();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading from gist:', error);
+                    loadTasksFromLocal();
+                    updateSyncStatus('error', 'שגיאה בטעינה מ-GitHub - נטען מאחסון מקומי');
+                });
+            } else {
+                // No gist ID yet, load from local and create gist
+                loadTasksFromLocal();
+                syncToGist();
+            }
+        }
+
+        function syncToGist() {
+            if (!githubToken) return;
+
+            updateSyncStatus('syncing', 'שומר ל-GitHub...');
+
+            const gistData = {
+                description: 'Task Dashboard Data - מחלקת הליכתיות ורכיבה',
+                public: false,
+                files: {
+                    'tasks.json': {
+                        content: JSON.stringify(tasks, null, 2)
+                    }
+                }
+            };
+
+            const url = gistId 
+                ? `https://api.github.com/gists/${gistId}`
+                : 'https://api.github.com/gists';
+            
+            const method = gistId ? 'PATCH' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Authorization': `token ${githubToken}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(gistData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    gistId = data.id;
+                    localStorage.setItem(GIST_ID_KEY, gistId);
+                    updateSyncStatus('synced', `נשמר ב-GitHub (${new Date().toLocaleString('he-IL')})`);
+                } else {
+                    updateSyncStatus('error', 'שגיאה בשמירה ל-GitHub');
+                }
+            })
+            .catch(error => {
+                console.error('Error syncing to gist:', error);
+                updateSyncStatus('error', 'שגיאה בשמירה ל-GitHub');
+            });
+        }
+
+        function updateSyncStatus(status, message) {
+            const statusEl = document.getElementById('syncStatus');
+            const textEl = document.getElementById('syncText');
+            
+            statusEl.className = 'sync-status';
+            
+            if (status === 'synced') {
+                statusEl.classList.add('synced');
+                textEl.textContent = `✓ ${message}`;
+            } else if (status === 'syncing') {
+                statusEl.classList.add('syncing');
+                textEl.textContent = `⏳ ${message}`;
+            } else if (status === 'error') {
+                statusEl.classList.add('error');
+                textEl.textContent = `❌ ${message}`;
+            } else {
+                textEl.textContent = message;
+            }
+        }
+
+        function saveTasks() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+            if (githubToken) {
+                syncToGist();
+            }
+        }
+
+        window.manualSync = function() {
+            if (githubToken) {
+                loadTasks();
+            }
+        };
+
+        function getTaskIndex(project, type) {
+            return tasks.findIndex(t => t.project === project && t.type === type);
+        }
+
+        function updateTaskStatus(project, type, newStatus) {
+            const index = getTaskIndex(project, type);
+            if (index !== -1) {
+                tasks[index].status = newStatus;
+                saveTasks();
+                applyFilters();
+                renderStats();
+            }
+        }
+
+        function addUpdate(project, type, updateText) {
+            const index = getTaskIndex(project, type);
+            if (index !== -1) {
+                if (!tasks[index].customUpdates) {
+                    tasks[index].customUpdates = [];
+                }
+                tasks[index].customUpdates.push({
+                    text: updateText,
+                    timestamp: new Date().toISOString()
+                });
+                saveTasks();
+                applyFilters();
+            }
+        }
+
+        function deleteUpdate(project, type, updateIndex) {
+            const index = getTaskIndex(project, type);
+            if (index !== -1 && tasks[index].customUpdates) {
+                tasks[index].customUpdates.splice(updateIndex, 1);
+                saveTasks();
+                applyFilters();
+            }
+        }
+
+        function addTodo(project, type, todoText) {
+            const index = getTaskIndex(project, type);
+            if (index !== -1) {
+                if (!tasks[index].todos) {
+                    tasks[index].todos = [];
+                }
+                tasks[index].todos.push({
+                    text: todoText,
+                    completed: false,
+                    timestamp: new Date().toISOString()
+                });
+                saveTasks();
+                applyFilters();
+            }
+        }
+
+        function toggleTodo(project, type, todoIndex) {
+            const index = getTaskIndex(project, type);
+            if (index !== -1 && tasks[index].todos && tasks[index].todos[todoIndex]) {
+                tasks[index].todos[todoIndex].completed = !tasks[index].todos[todoIndex].completed;
+                saveTasks();
+                applyFilters();
+            }
+        }
+
+        function deleteTodo(project, type, todoIndex) {
+            const index = getTaskIndex(project, type);
+            if (index !== -1 && tasks[index].todos) {
+                tasks[index].todos.splice(todoIndex, 1);
+                saveTasks();
+                applyFilters();
+            }
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'עכשיו';
+            if (diffMins < 60) return `לפני ${diffMins} דקות`;
+            if (diffHours < 24) return `לפני ${diffHours} שעות`;
+            
+            if (diffDays < 7) return `לפני ${diffDays} ימים`;
+            
+            const dateStr = date.toLocaleDateString('he-IL', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+            });
+            
+            const timeStr = date.toLocaleTimeString('he-IL', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            return `${dateStr} בשעה ${timeStr}`;
+        }
+
+        function renderStats() {
+            const stats = {
+                total: tasks.length,
+                priority: tasks.filter(t => t.status === 'P').length,
+                inProgress: tasks.filter(t => t.status === 'X').length,
+                completed: tasks.filter(t => t.status === 'V').length,
+                ongoing: tasks.filter(t => t.status === 'O').length,
+                onHold: tasks.filter(t => t.status === 'H').length
+            };
+
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--gray-800);">${stats.total}</div>
+                    <div class="stat-label">סה"כ משימות</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--danger);">${stats.priority}</div>
+                    <div class="stat-label">קדימות גבוהה</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--primary);">${stats.inProgress}</div>
+                    <div class="stat-label">בעבודה</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--success);">${stats.ongoing}</div>
+                    <div class="stat-label">מתמשך</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--warning);">${stats.onHold}</div>
+                    <div class="stat-label">בהמתנה</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: var(--gray-500);">${stats.completed}</div>
+                    <div class="stat-label">הושלם</div>
+                </div>
+            `;
+        }
+
+        function populateFilters() {
+            const types = [...new Set(tasks.map(t => t.type))].filter(Boolean).sort();
+            const owners = [...new Set(tasks.map(t => t.owner))].filter(o => o && o !== 'nan' && o !== '').sort();
+
+            document.getElementById('typeFilter').innerHTML = '<option value="">הכל</option>' +
+                types.map(type => `<option value="${type}">${type}</option>`).join('');
+
+            document.getElementById('ownerFilter').innerHTML = '<option value="">הכל</option>' +
+                owners.map(owner => `<option value="${owner}">${owner}</option>`).join('');
+        }
+
+        function renderTasks() {
+            const grid = document.getElementById('tasksGrid');
+            
+            if (filteredTasks.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-tasks">
+                        <div class="no-tasks-icon">🔍</div>
+                        <h3>לא נמצאו משימות</h3>
+                        <p>נסה לשנות את הסינון או החיפוש</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredTasks.map((task, index) => {
+                const ownerInitial = task.owner && task.owner !== 'nan' && task.owner !== '' ? task.owner.charAt(0) : '?';
+                const updateId = `updates-${task.project.replace(/\s/g, '-')}-${index}`;
+                
+                const allUpdates = [
+                    ...(task.updates || []).map(u => ({ text: u, isCustom: false })),
+                    ...(task.customUpdates || []).map(u => ({ ...u, isCustom: true }))
+                ];
+                
+                return `
+                    <div class="task-card priority-${task.status}" style="animation-delay: ${index * 0.05}s;">
+                        <div class="task-header">
+                            <div class="task-type">${task.type}</div>
+                            <div class="task-title">${task.project}</div>
+                            ${task.owner && task.owner !== 'nan' && task.owner !== '' ? `
+                                <div class="task-owner">
+                                    <div class="owner-badge">${ownerInitial}</div>
+                                    <span>${task.owner}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="status-change-section">
+                            <label class="status-change-label">שנה סטטוס:</label>
+                            <select class="status-select" onchange="updateTaskStatus('${task.project}', '${task.type}', this.value)">
+                                <option value="P" ${task.status === 'P' ? 'selected' : ''}>P - קדימות גבוהה</option>
+                                <option value="X" ${task.status === 'X' ? 'selected' : ''}>X - בעבודה</option>
+                                <option value="O" ${task.status === 'O' ? 'selected' : ''}>O - מתמשך</option>
+                                <option value="V" ${task.status === 'V' ? 'selected' : ''}>V - הושלם</option>
+                                <option value="H" ${task.status === 'H' ? 'selected' : ''}>H - בהמתנה</option>
+                                <option value="D" ${task.status === 'D' ? 'selected' : ''}>D - בוטל</option>
+                            </select>
+                        </div>
+
+                        ${allUpdates.length > 0 ? `
+                            <button class="toggle-updates" onclick="toggleUpdates('${updateId}')">
+                                📋 הצג עדכונים (${allUpdates.length})
+                            </button>
+                            <div class="task-updates updates-collapsed" id="${updateId}">
+                                ${allUpdates.map((update, idx) => {
+                                    if (update.isCustom) {
+                                        const customIdx = (task.customUpdates || []).findIndex(u => u.text === update.text && u.timestamp === update.timestamp);
+                                        return `
+                                            <div class="update-item custom-update">
+                                                <button class="delete-update-btn" onclick="deleteUpdate('${task.project}', '${task.type}', ${customIdx})" title="מחק עדכון">🗑️</button>
+                                                <div>${update.text}</div>
+                                                <span class="update-timestamp">📅 ${formatDate(update.timestamp)}</span>
+                                            </div>
+                                        `;
+                                    } else {
+                                        return `<div class="update-item">${update.text}</div>`;
+                                    }
+                                }).join('')}
+                            </div>
+                        ` : ''}
+
+                        <div class="add-update-section">
+                            <div class="section-title">➕ הוסף עדכון סטטוס</div>
+                            <div class="add-update-form">
+                                <input 
+                                    type="text" 
+                                    class="add-update-input" 
+                                    id="update-input-${index}"
+                                    placeholder="הזן עדכון חדש..."
+                                    onkeypress="if(event.key==='Enter') addUpdateFromInput('${task.project}', '${task.type}', ${index})"
+                                >
+                                <button class="add-update-btn" onclick="addUpdateFromInput('${task.project}', '${task.type}', ${index})">
+                                    הוסף
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="todo-section">
+                            <div class="section-title">✓ משימות לביצוע</div>
+                            ${task.todos && task.todos.length > 0 ? `
+                                <div class="todo-list">
+                                    ${task.todos.map((todo, todoIdx) => `
+                                        <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                                            <input 
+                                                type="checkbox" 
+                                                class="todo-checkbox" 
+                                                ${todo.completed ? 'checked' : ''}
+                                                onchange="toggleTodo('${task.project}', '${task.type}', ${todoIdx})"
+                                            >
+                                            <div style="flex: 1;">
+                                                <span class="todo-text">${todo.text}</span>
+                                                <div class="update-timestamp">📅 נוצר ${formatDate(todo.timestamp)}</div>
+                                            </div>
+                                            <button class="todo-delete-btn" onclick="deleteTodo('${task.project}', '${task.type}', ${todoIdx})">🗑️</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            <div class="add-update-form">
+                                <input 
+                                    type="text" 
+                                    class="add-todo-input" 
+                                    id="todo-input-${index}"
+                                    placeholder="הזן משימה חדשה..."
+                                    onkeypress="if(event.key==='Enter') addTodoFromInput('${task.project}', '${task.type}', ${index})"
+                                >
+                                <button class="add-todo-btn" onclick="addTodoFromInput('${task.project}', '${task.type}', ${index})">
+                                    הוסף
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.toggleUpdates = function(id) {
+            const element = document.getElementById(id);
+            element.classList.toggle('updates-collapsed');
+        };
+
+        window.addUpdateFromInput = function(project, type, index) {
+            const input = document.getElementById(`update-input-${index}`);
+            const text = input.value.trim();
+            if (text) {
+                addUpdate(project, type, text);
+                input.value = '';
+            }
+        };
+
+        window.addTodoFromInput = function(project, type, index) {
+            const input = document.getElementById(`todo-input-${index}`);
+            const text = input.value.trim();
+            if (text) {
+                addTodo(project, type, text);
+                input.value = '';
+            }
+        };
+
+        window.exportToJSON = function() {
+            const dataStr = JSON.stringify(tasks, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `tasks-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        };
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+            const ownerFilter = document.getElementById('ownerFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            filteredTasks = tasks.filter(task => {
+                const matchesSearch = !search || 
+                    task.project.toLowerCase().includes(search) ||
+                    task.type.toLowerCase().includes(search) ||
+                    (task.updates && task.updates.some(u => u.toLowerCase().includes(search))) ||
+                    (task.customUpdates && task.customUpdates.some(u => u.text.toLowerCase().includes(search))) ||
+                    (task.todos && task.todos.some(t => t.text.toLowerCase().includes(search)));
+                
+                const matchesType = !typeFilter || task.type === typeFilter;
+                const matchesOwner = !ownerFilter || task.owner === ownerFilter;
+                const matchesStatus = !statusFilter || task.status === statusFilter;
+
+                return matchesSearch && matchesType && matchesOwner && matchesStatus;
+            });
+
+            renderTasks();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('typeFilter').addEventListener('change', applyFilters);
+        document.getElementById('ownerFilter').addEventListener('change', applyFilters);
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+</html>
